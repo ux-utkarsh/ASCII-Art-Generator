@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASCII Art Generator Device | Interactive Knob-Based ASCII Maker | Built by Utkarsh Dhairya Panwar</title>
+  <meta name="description" content="Create tactile, real-time ASCII art using a hardware-inspired interface with Detail, Contrast, and Style knobs. Upload an image, generate dynamic ASCII visuals, and download instantly. Designed and built by Utkarsh Dhairya Panwar." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='bg' cx='42%25' cy='35%25' r='65%25'%3E%3Cstop offset='0%25' stop-color='%23383838'/%3E%3Cstop offset='100%25' stop-color='%23111111'/%3E%3C/radialGradient%3E%3CradialGradient id='ring' cx='40%25' cy='32%25' r='60%25'%3E%3Cstop offset='0%25' stop-color='%23303030'/%3E%3Cstop offset='100%25' stop-color='%230a0a0a'/%3E%3C/radialGradient%3E%3Cfilter id='glow'%3E%3CfeGaussianBlur stdDeviation='1.2' result='blur'/%3E%3CfeMerge%3E%3CfeMergeNode in='blur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3Cfilter id='shadow' x='-20%25' y='-20%25' width='160%25' height='160%25'%3E%3CfeDropShadow dx='2' dy='3' stdDeviation='4' flood-color='%23000000' flood-opacity='0.7'/%3E%3C/filter%3E%3C/defs%3E%3C!-- Outer ring --%3E%3Ccircle cx='32' cy='32' r='30' fill='url(%23ring)' filter='url(%23shadow)'/%3E%3C!-- Inner face --%3E%3Ccircle cx='32' cy='32' r='24' fill='url(%23bg)'/%3E%3C!-- Bevel highlight top-left --%3E%3Ccircle cx='32' cy='32' r='23.5' fill='none' stroke='url(%23bevel)' stroke-width='0.5' opacity='0.5'/%3E%3C!-- Orange indicator --%3E%3Crect x='30.5' y='10' width='3' height='13' rx='1.5' fill='%23ff592c' filter='url(%23glow)'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #f0f0ee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 12px;
+      font-family: 'IBM Plex Sans Condensed', sans-serif;
+    }
+
+    /* ── Device shell ── */
+    .device {
+      width: min(420px, 100%);
+      background: #000;
+      border: 1px solid rgba(0,0,0,0.5);
+      border-radius: 18px;
+      padding: 6px;
+      box-shadow:
+        140px  159px 85px 0px rgba(0,0,0,0.03),
+        79px   89px  71px 0px rgba(0,0,0,0.10),
+        35px   40px  53px 0px rgba(0,0,0,0.17),
+        9px    10px  29px 0px rgba(0,0,0,0.19);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Noise texture on full device frame */
+    .device::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      opacity: 0.07;
+      pointer-events: none;
+      border-radius: inherit;
+      z-index: 0;
+    }
+
+    .device-inner {
+      background: #37383d;
+      border: 1px solid rgba(102,102,102,0.5);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Subtle noise overlay */
+    .device-inner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      opacity: 0.06;
+      pointer-events: none;
+      border-radius: inherit;
+      z-index: 10;
+    }
+
+    /* ── Screen ── */
+    .screen-wrap {
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screen {
+      background: #000;
+      border: 1px solid rgba(0,0,0,0.5);
+      border-radius: 8px;
+      height: 300px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 4.4px 2px rgba(0,0,0,0.25);
+    }
+
+    /* Scanline overlay */
+    .screen::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.07) 2px,
+        rgba(0,0,0,0.07) 4px
+      );
+      pointer-events: none;
+      z-index: 6;
+      border-radius: inherit;
+    }
+
+    .screen-label {
+      color: #a8a8a8;
+      font-size: 14px;
+      letter-spacing: 0.14px;
+      text-transform: uppercase;
+      font-weight: 500;
+      z-index: 2;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      text-align: center;
+    }
+
+    .screen-label.hidden { opacity: 0; }
+
+    /* Idle ASCII texture grid */
+    .idle-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      opacity: 0.18;
+      transition: opacity 0.5s ease;
+    }
+
+    /* ASCII output — centered vertically + horizontally */
+    #ascii-pre {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      font-family: 'Courier New', monospace;
+      font-size: 6px;
+      line-height: 1;
+      color: #d4d4d4;
+      white-space: pre;
+      overflow: hidden;
+      /* centre the text block inside the screen */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    #ascii-pre.visible { opacity: 1; }
+
+    /* ── Invert toggle (inside screen, top-right) ── */
+    .invert-overlay {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 25;          /* above file-input (z-index:20) and scanline (z-index:6) */
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .invert-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .invert-overlay-label {
+      color: rgba(168,168,168,0.7);
+      font-size: 9px;
+      letter-spacing: 0.09px;
+      text-transform: uppercase;
+      font-weight: 500;
+      user-select: none;
+    }
+
+    .toggle {
+      width: 32px;
+      height: 18px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 9px;
+      position: relative;
+      cursor: pointer;
+      border: 0.5px solid rgba(255,255,255,0.12);
+      transition: background 0.2s ease;
+      flex-shrink: 0;
+      /* vertically centre the thumb */
+      display: flex;
+      align-items: center;
+    }
+
+    .toggle.on { background: rgba(50,20,8,0.92); }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      /* perfectly centred vertically: (18px height - 14px circle) / 2 = 2px */
+      top: 50%;
+      left: 2px;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      background: rgba(110,110,110,0.9);
+      border-radius: 50%;
+      transition: left 0.2s ease, background 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    .toggle.on::after {
+      left: calc(100% - 16px);   /* 32 - 14 - 2 = 16px from right edge */
+      background: #ff592c;
+      box-shadow: 0 0 6px rgba(255,89,44,0.6);
+    }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      align-items: center;
+      padding: 24px 32px 32px;
+    }
+
+    .knob-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .knob-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 19px;
+    }
+
+    .knob-label {
+      color: #a8a8a8;
+      font-size: 14px;
+      letter-spacing: 0.14px;
+      text-transform: uppercase;
+      font-weight: 500;
+      user-select: none;
+    }
+
+    /* ── Knob ── */
+    /*
+      Stroke from Figma: linear gradient #D4D4D4 (0%) → #171717 (33%, 71%) → transparent
+      Position: Inside, Weight: 0.25px
+      We achieve this with a ::before pseudo-element gradient mask ring.
+    */
+    .knob-shell {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #202020;
+      border: none;
+      overflow: visible;
+      position: relative;
+      flex-shrink: 0;
+      box-shadow:
+        21.375px 24.75px  9px      0px rgba(0,0,0,0.01),
+        13.5px   15.75px  7.875px  0px rgba(0,0,0,0.06),
+        7.875px   9px     6.75px   0px rgba(0,0,0,0.20),
+        3.375px   3.375px 5.625px  0px rgba(0,0,0,0.34),
+        1.125px   1.125px 3.375px  0px rgba(0,0,0,0.40);
+      cursor: grab;
+      transition: transform 0.05s ease, box-shadow 0.05s ease;
+      touch-action: none;
+    }
+
+    /* Gradient stroke ring on the knob shell */
+    .knob-shell::before {
+      content: '';
+      position: absolute;
+      inset: -0.5px;
+      border-radius: 50%;
+      padding: 0.5px;
+      background: linear-gradient(
+        135deg,
+        #d4d4d4 0%,
+        #686868 30%,
+        #171717 55%,
+        #171717 100%
+      );
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .knob-shell:active, .knob-shell.dragging {
+      cursor: grabbing;
+      transform: scale(0.98);
+    }
+
+    /* Outer decorative ring */
+    .knob-outer {
+      position: absolute;
+      left: -0.978px;
+      top:  -0.978px;
+      width:  55.956px;
+      height: 55.956px;
+      border-radius: 50%;
+      background: #252525;
+      border: 6.319px solid #191919;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Inner face */
+    .knob-face {
+      position: absolute;
+      left:  5.51px;
+      top:   5.51px;
+      width:  42.981px;
+      height: 42.981px;
+      border-radius: 50%;
+      background: #252525;
+      border: none;
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    /* Gradient stroke on knob face — fixed bevel ring */
+    .knob-face::before {
+      content: '';
+      position: absolute;
+      inset: -0.25px;
+      border-radius: 50%;
+      padding: 0.25px;
+      background: linear-gradient(
+        135deg,
+        #d4d4d4 0%,
+        #686868 30%,
+        #171717 55%,
+        #171717 100%
+      );
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Indicator pill container — rotates as a whole */
+    .knob-indicator-wrap {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 2px;
+    }
+
+    .knob-indicator-track {
+      width: 3.442px;
+      height: 20.318px;
+      background: #252525;
+      border-radius: 999px;
+      box-shadow: inset 0 0 1.787px 0.993px rgba(0,0,0,0.45);
+      position: relative;
+    }
+
+    .knob-indicator-glow {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      width:  2.46px;
+      height: 19.279px;
+      border-radius: 999px;
+      background: #ff592c;
+      filter: blur(0.298px);
+    }
+
+    /* ── Download button ──
+       Figma: outer container #202020, border 0.235px rgba(0,0,0,0.5), p-[4px], rounded-[6px]
+              inner button #252525, border 0.147px #d4d4d4, h-[37px], rounded-[4px]
+       Press effect: whole assembly (container + inner) moves down.
+    */
+    .btn-wrap {
+      width: 100%;
+      /* 3-D "shelf" effect: the outer shell is fixed, inner sinks on press */
+      position: relative;
+    }
+
+    /* The pressable assembly that sinks */
+    .btn-assembly {
+      background: #202020;
+      border: none;             /* replaced by gradient pseudo below */
+      border-radius: 6px;
+      padding: 4px;
+      width: 100%;
+      position: relative;
+      box-shadow:
+        0px 4px 0px 0px rgba(0,0,0,0.55),
+        -8.941px  10.353px 3.765px 0px rgba(0,0,0,0.01),
+        -5.647px   6.588px 3.294px 0px rgba(0,0,0,0.06),
+        -3.294px   3.765px 2.824px 0px rgba(0,0,0,0.20),
+        -1.412px   1.412px 2.353px 0px rgba(0,0,0,0.34),
+        -0.471px   0.471px 1.412px 0px rgba(0,0,0,0.40);
+      cursor: pointer;
+      user-select: none;
+      transform: translateY(0px);
+      transition: transform 0.07s cubic-bezier(0.2,0,0.4,1),
+                  box-shadow 0.07s cubic-bezier(0.2,0,0.4,1);
+    }
+
+    /* No stroke on outer container */
+    .btn-assembly::before { display: none; }
+
+    .btn-assembly:hover {
+      box-shadow:
+        0px 5px 0px 0px rgba(0,0,0,0.55),
+        -8.941px  10.353px 3.765px 0px rgba(0,0,0,0.01),
+        -5.647px   6.588px 3.294px 0px rgba(0,0,0,0.06),
+        -3.294px   3.765px 2.824px 0px rgba(0,0,0,0.22),
+        -1.412px   1.412px 2.353px 0px rgba(0,0,0,0.36),
+        -0.471px   0.471px 1.412px 0px rgba(0,0,0,0.42);
+    }
+
+    .btn-assembly.pressed {
+      transform: translateY(3px) scale(0.99);
+      box-shadow:
+        0px 1px 0px 0px rgba(0,0,0,0.55),
+        -3px 3px 6px 0px rgba(0,0,0,0.25);
+    }
+
+    /* Inner button face */
+    .btn-inner {
+      background: #252525;
+      border: none;             /* gradient stroke via ::before */
+      border-radius: 4px;
+      height: 37px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #a8a8a8;
+      font-family: 'IBM Plex Sans Condensed', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.14px;
+      text-transform: uppercase;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.05),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+      pointer-events: none;
+      position: relative;
+    }
+
+    /* Subtle gradient stroke on inner face — top-left light matching knob direction */
+    .btn-inner::before {
+      content: '';
+      position: absolute;
+      inset: -0.3px;
+      border-radius: 4.3px;
+      padding: 0.3px;
+      background: linear-gradient(
+        135deg,
+        rgba(212,212,212,0.45) 0%,
+        rgba(100,100,100,0.18) 30%,
+        rgba(23,23,23,0.12)    55%,
+        rgba(23,23,23,0.08)   100%
+      );
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      border-top: 1px solid rgba(168,168,168,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .footer-link {
+      color: #a8a8a8;
+      font-size: 12px;
+      letter-spacing: 0.12px;
+      text-transform: uppercase;
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    /* ── Orange indicator dot ── */
+    .indicator-wrap {
+      position: relative;
+      width: 8px;
+      height: 8px;
+      display: grid;
+      place-items: center;
+    }
+
+    .indicator-glow {
+      position: absolute;
+      inset: 0;
+      background: #ff592c;
+      border-radius: 50%;
+      filter: blur(8px);
+      animation: breathe 1.8s ease-in-out infinite;
+    }
+
+    .indicator-dot {
+      position: absolute;
+      inset: 0;
+      background: #ff592c;
+      border-radius: 50%;
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50%       { opacity: 1;   transform: scale(1.7); }
+    }
+
+    .indicator-glow.active {
+      animation: breathe-active 0.55s ease-in-out infinite;
+    }
+
+    @keyframes breathe-active {
+      0%, 100% { opacity: 0.8; transform: scale(1.5); }
+      50%       { opacity: 1;   transform: scale(2.4); }
+    }
+
+    .indicator-glow.flash {
+      animation: ind-flash 0.55s ease-out forwards;
+    }
+
+    @keyframes ind-flash {
+      0%   { opacity: 1; transform: scale(3.5); filter: blur(6px); }
+      100% { opacity: 0.5; transform: scale(1); filter: blur(8px); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="device">
+  <div class="device-inner">
+
+    <!-- Screen -->
+    <div class="screen-wrap">
+      <div class="screen" id="screen">
+        <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp"
+               style="position:absolute;inset:0;opacity:0;cursor:pointer;z-index:20;width:100%;height:100%" />
+        <canvas class="idle-canvas" id="idle-canvas"></canvas>
+        <span class="screen-label" id="screen-label">Click to Upload Image</span>
+        <pre id="ascii-pre"></pre>
+
+        <!-- Invert toggle — shown only after image loaded -->
+        <div class="invert-overlay" id="invert-overlay">
+          <span class="invert-overlay-label">Invert</span>
+          <div class="toggle" id="invert-toggle"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+
+      <div class="knob-row">
+        <!-- DETAIL knob -->
+        <div class="knob-group">
+          <div class="knob-shell" id="knob-detail" data-value="0.5" data-label="detail">
+            <div class="knob-outer"></div>
+            <div class="knob-face">
+              <div class="knob-indicator-wrap" id="indicator-detail">
+                <div class="knob-indicator-track">
+                  <div class="knob-indicator-glow"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <span class="knob-label">Detail</span>
+        </div>
+
+        <!-- CONTRAST knob -->
+        <div class="knob-group">
+          <div class="knob-shell" id="knob-contrast" data-value="0.5" data-label="contrast">
+            <div class="knob-outer"></div>
+            <div class="knob-face">
+              <div class="knob-indicator-wrap" id="indicator-contrast">
+                <div class="knob-indicator-track">
+                  <div class="knob-indicator-glow"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <span class="knob-label">Contrast</span>
+        </div>
+
+        <!-- STYLE knob -->
+        <div class="knob-group">
+          <div class="knob-shell" id="knob-style" data-value="0" data-label="style">
+            <div class="knob-outer"></div>
+            <div class="knob-face">
+              <div class="knob-indicator-wrap" id="indicator-style">
+                <div class="knob-indicator-track">
+                  <div class="knob-indicator-glow"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <span class="knob-label">Style</span>
+        </div>
+      </div>
+
+      <!-- Download button: outer wrap is static, assembly sinks on press -->
+      <div class="btn-wrap">
+        <div class="btn-assembly" id="btn-assembly">
+          <div class="btn-inner">Download ASCII Art</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <a class="footer-link" href="https://www.utkarshdesign.com/" target="_blank" rel="noopener">Built by Utkarsh</a>
+      <div class="indicator-wrap">
+        <div class="indicator-glow" id="indicator-glow"></div>
+        <div class="indicator-dot"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   ASCII ART DEVICE — main script
+═══════════════════════════════════════════════ */
+
+/* ── Audio context for tactile sounds ── */
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playKnobTick(intensity) {
+  try {
+    const ctx = getAudioCtx();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.025, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      // Short white-noise burst with fast decay
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 6);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.06 + intensity * 0.08;
+
+    // Bandpass to make it sound mechanical (click-y, ~3–5kHz)
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 3800;
+    bp.Q.value = 1.2;
+
+    src.connect(bp);
+    bp.connect(gain);
+    gain.connect(ctx.destination);
+    src.start();
+  } catch(e) {}
+}
+
+function playButtonPress() {
+  try {
+    const ctx = getAudioCtx();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.04, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 4);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.12;
+
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 1800;
+
+    src.connect(lp);
+    lp.connect(gain);
+    gain.connect(ctx.destination);
+    src.start();
+  } catch(e) {}
+}
+
+function playButtonRelease() {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(420, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.06);
+    gain.gain.setValueAtTime(0.06, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.08);
+  } catch(e) {}
+}
+
+/* ── Char sets ── */
+const CHAR_SETS = [
+  '@%#*+=-:. ',          // 1 Classic    — rich tonal range, familiar ASCII look
+  '█▓▒░ ',               // 2 Block      — solid filled shapes, bold graphic contrast
+  '¥$&§ƒ@#%*+:. ',      // 3 Dense      — symbol-heavy, editorial / poster feel
+  '·˙:;il|/\\',         // 4 Wireframe  — sparse strokes, skeletal structure
+  'MWNmwdbqpBDORQ0#',    // 5 Organic    — wide letterforms, painterly blob look
+  '01 ',                 // 6 Binary     — pure digital, matrix-style
+  '▲▼◆●○◇□■',           // 7 Geometric  — shape-based, abstract mosaic
+  '✦✧★☆✱✸⊹⋆ ',         // 8 Starfield  — light scatter, dreamy / cosmos feel
+];
+
+const DETAIL_MIN = 40;
+const DETAIL_MAX = 200;
+
+const state = {
+  detail:    0.5,
+  contrast:  0.5,
+  style:     0,
+  invert:    false,
+  hasImage:  false,
+  imageData: null,
+};
+
+/* Char set morph */
+let currentCharSet = CHAR_SETS[0];
+let targetCharSet  = CHAR_SETS[0];
+let morphProgress  = 1;
+let morphAnimId    = null;
+
+/* Knob rotation: 270° range, value 0 → -135°, value 1 → +135° */
+const KNOB_RANGE   = 270;
+const KNOB_MIN_DEG = -135;
+
+function valueToDeg(v) {
+  return KNOB_MIN_DEG + v * KNOB_RANGE;
+}
+
+/* DOM refs */
+const knobs = {
+  detail:   document.getElementById('knob-detail'),
+  contrast: document.getElementById('knob-contrast'),
+  style:    document.getElementById('knob-style'),
+};
+const indicators = {
+  detail:   document.getElementById('indicator-detail'),
+  contrast: document.getElementById('indicator-contrast'),
+  style:    document.getElementById('indicator-style'),
+};
+const fileInput     = document.getElementById('file-input');
+const screenLabel   = document.getElementById('screen-label');
+const idleCanvas    = document.getElementById('idle-canvas');
+const asciiPre      = document.getElementById('ascii-pre');
+const btnAssembly   = document.getElementById('btn-assembly');
+const invertToggle  = document.getElementById('invert-toggle');
+const invertOverlay = document.getElementById('invert-overlay');
+const indicatorGlow = document.getElementById('indicator-glow');
+const screen        = document.getElementById('screen');
+
+/* ══════════════════════════════════
+   IDLE CANVAS — animated ASCII noise
+══════════════════════════════════ */
+const idleCtx = idleCanvas.getContext('2d');
+let idleAnimId = null;
+
+function resizeIdleCanvas() {
+  idleCanvas.width  = screen.clientWidth;
+  idleCanvas.height = screen.clientHeight;
+}
+
+const IDLE_CHARS = '.:-=+*#%@';
+let idleGrid = [];
+
+function buildIdleGrid() {
+  const cols = Math.floor(idleCanvas.width  / 7);
+  const rows = Math.floor(idleCanvas.height / 11);
+  idleGrid = [];
+  for (let r = 0; r < rows; r++) {
+    idleGrid.push([]);
+    for (let c = 0; c < cols; c++) {
+      idleGrid[r].push({
+        ch:    IDLE_CHARS[Math.floor(Math.random() * IDLE_CHARS.length)],
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+}
+
+function drawIdle(ts) {
+  idleAnimId = requestAnimationFrame(drawIdle);
+  idleCtx.clearRect(0, 0, idleCanvas.width, idleCanvas.height);
+  idleCtx.font = '10px "Courier New", monospace';
+  idleCtx.textBaseline = 'top';
+  const t = ts / 1000;
+  for (let r = 0; r < idleGrid.length; r++) {
+    for (let c = 0; c < idleGrid[r].length; c++) {
+      const cell = idleGrid[r][c];
+      if (Math.random() < 0.0004) {
+        cell.ch = IDLE_CHARS[Math.floor(Math.random() * IDLE_CHARS.length)];
+      }
+      const alpha = 0.15 + 0.1 * Math.sin(t * 0.4 + cell.phase);
+      idleCtx.fillStyle = `rgba(168,168,168,${alpha.toFixed(3)})`;
+      idleCtx.fillText(cell.ch, c * 7, r * 11);
+    }
+  }
+}
+
+function startIdle() {
+  resizeIdleCanvas();
+  buildIdleGrid();
+  cancelAnimationFrame(idleAnimId);
+  idleAnimId = requestAnimationFrame(drawIdle);
+}
+
+/* ══════════════════════════════════
+   KNOB DRAG + SOUND
+══════════════════════════════════ */
+let activeKnob   = null;
+let dragStartY   = 0;
+let dragStartVal = 0;
+let lastTickVal  = {};  // track last value when tick played
+
+function setKnobValue(name, v) {
+  v = Math.max(0, Math.min(1, v));
+  const prev = state[name];
+  state[name] = v;
+  knobs[name].dataset.value = v;
+  const deg = valueToDeg(v);
+  /* Only rotate the indicator — gradient stroke stays fixed */
+  indicators[name].style.transform = `rotate(${deg}deg)`;
+
+  // Tick sound every ~2% change
+  const tickInterval = 0.02;
+  const lt = lastTickVal[name] ?? prev;
+  if (Math.abs(v - lt) >= tickInterval) {
+    lastTickVal[name] = v;
+    playKnobTick(Math.abs(v - prev));
+  }
+}
+
+/* Init rotations only — no specular shift */
+['detail','contrast','style'].forEach(name => {
+  const v   = parseFloat(knobs[name].dataset.value);
+  const deg = valueToDeg(v);
+  indicators[name].style.transform = `rotate(${deg}deg)`;
+  lastTickVal[name] = v;
+});
+
+let dragPointerType = 'mouse';
+
+function onPointerDown(e) {
+  const name = e.currentTarget.dataset.label;
+  activeKnob      = name;
+  dragStartY      = e.clientY;
+  dragStartVal    = state[name];
+  dragPointerType = e.pointerType; // 'mouse' | 'touch' | 'pen'
+  e.currentTarget.classList.add('dragging');
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup',   onPointerUp);
+  setIndicatorActive(true);
+  e.preventDefault();
+}
+
+function onPointerMove(e) {
+  if (!activeKnob) return;
+  const dy = dragStartY - e.clientY;
+  // Touch needs less drag distance — halve the divisor for touch/pen
+  const sensitivity = (dragPointerType === 'touch' || dragPointerType === 'pen') ? 70 : 160;
+  const delta  = dy / sensitivity;
+  const newVal = Math.max(0, Math.min(1, dragStartVal + delta));
+  setKnobValue(activeKnob, newVal);
+  scheduleRender();
+}
+
+function onPointerUp() {
+  if (!activeKnob) return;
+  knobs[activeKnob].classList.remove('dragging');
+  activeKnob = null;
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup',   onPointerUp);
+  setIndicatorActive(false);
+}
+
+Object.entries(knobs).forEach(([, el]) => {
+  el.addEventListener('pointerdown', onPointerDown);
+});
+
+/* ══════════════════════════════════
+   INDICATOR DOT
+══════════════════════════════════ */
+let indicatorActiveCount = 0;
+
+function setIndicatorActive(on) {
+  indicatorActiveCount = Math.max(0, indicatorActiveCount + (on ? 1 : -1));
+  if (indicatorActiveCount > 0) {
+    indicatorGlow.classList.add('active');
+    indicatorGlow.classList.remove('ind-flash');
+  } else {
+    indicatorGlow.classList.remove('active');
+  }
+}
+
+function flashIndicator() {
+  indicatorGlow.classList.remove('active');
+  indicatorGlow.classList.remove('flash');
+  void indicatorGlow.offsetWidth; // reflow to restart animation
+  indicatorGlow.classList.add('flash');
+  setTimeout(() => indicatorGlow.classList.remove('flash'), 700);
+}
+
+/* ══════════════════════════════════
+   IMAGE UPLOAD
+══════════════════════════════════ */
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => loadImage(ev.target.result);
+  reader.readAsDataURL(file);
+  // Reset so same file can be re-uploaded
+  e.target.value = '';
+});
+
+function loadImage(src) {
+  const img = new Image();
+  img.onload = () => {
+    const MAX = 800;
+    let w = img.width, h = img.height;
+    if (w > MAX || h > MAX) {
+      if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+      else        { w = Math.round(w * MAX / h); h = MAX; }
+    }
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    const ctx = off.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    state.imageData = ctx.getImageData(0, 0, w, h);
+    state.hasImage  = true;
+
+    screenLabel.classList.add('hidden');
+    idleCanvas.style.opacity = '0.04';
+    invertOverlay.classList.add('visible');
+
+    renderASCII();
+  };
+  img.src = src;
+}
+
+/* ══════════════════════════════════
+   ASCII ENGINE
+══════════════════════════════════ */
+let renderTimer = null;
+function scheduleRender() {
+  if (!state.hasImage) return;
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(renderASCII, 16);
+}
+
+function renderASCII() {
+  if (!state.hasImage || !state.imageData) return;
+
+  const src = state.imageData;
+  const sw = src.width, sh = src.height;
+
+  const cols = Math.round(DETAIL_MIN + state.detail * (DETAIL_MAX - DETAIL_MIN));
+  const charAspect = 0.55;
+  const rows = Math.round((sh / sw) * cols * charAspect);
+
+  const contrastFactor = 0.2 + state.contrast * 3.8;
+  const charSet = getMorphedCharSet();
+  const charLen = charSet.length - 1;
+
+  const lines = [];
+  for (let r = 0; r < rows; r++) {
+    let line = '';
+    for (let c = 0; c < cols; c++) {
+      const px  = Math.floor(c / cols * sw);
+      const py  = Math.floor(r / rows * sh);
+      const idx = (py * sw + px) * 4;
+      const R   = src.data[idx], G = src.data[idx+1], B = src.data[idx+2];
+
+      let lum = (0.299 * R + 0.587 * G + 0.114 * B) / 255;
+      lum = applyContrast(lum, contrastFactor);
+      if (state.invert) lum = 1 - lum;
+
+      const ci = Math.min(charLen, Math.floor(lum * (charLen + 1)));
+      line += charSet[ci];
+    }
+    lines.push(line);
+  }
+
+  asciiPre.textContent = lines.join('\n');
+  fitAsciiToScreen(cols, rows);
+  asciiPre.classList.add('visible');
+}
+
+function applyContrast(lum, factor) {
+  return Math.max(0, Math.min(1, (lum - 0.5) * factor + 0.5));
+}
+
+function fitAsciiToScreen(cols, rows) {
+  const sw = screen.clientWidth  - 8;
+  const sh = screen.clientHeight - 8;
+  const fsW = sw / (cols * 0.601);   /* monospace char width ≈ 0.601× font-size */
+  const fsH = sh / (rows * 1.2);
+  const fs  = Math.min(fsW, fsH);
+  asciiPre.style.fontSize   = fs + 'px';
+  asciiPre.style.lineHeight = '1.2';
+}
+
+/* ══════════════════════════════════
+   CHAR SET MORPH
+══════════════════════════════════ */
+function getTargetStyleIndex() {
+  return Math.min(7, Math.floor(state.style * 8));
+}
+
+function getMorphedCharSet() {
+  if (morphProgress >= 1) return currentCharSet;
+  return currentCharSet.split('').map((ch, i) => {
+    if (Math.random() < morphProgress) {
+      const ti = Math.floor(i / currentCharSet.length * targetCharSet.length);
+      return targetCharSet[ti] ?? targetCharSet[targetCharSet.length - 1];
+    }
+    return ch;
+  }).join('');
+}
+
+function triggerStyleMorph() {
+  const newSet = CHAR_SETS[getTargetStyleIndex()];
+  if (newSet === currentCharSet && morphProgress >= 1) return;
+  targetCharSet = newSet;
+  morphProgress = 0;
+  cancelAnimationFrame(morphAnimId);
+  const start = performance.now();
+  const DURATION = 250;
+  function step(ts) {
+    morphProgress = Math.min(1, (ts - start) / DURATION);
+    scheduleRender();
+    if (morphProgress < 1) {
+      morphAnimId = requestAnimationFrame(step);
+    } else {
+      currentCharSet = targetCharSet;
+      morphProgress  = 1;
+      scheduleRender();
+    }
+  }
+  morphAnimId = requestAnimationFrame(step);
+}
+
+let lastStyleVal = state.style;
+setInterval(() => {
+  if (Math.abs(state.style - lastStyleVal) > 0.001) {
+    lastStyleVal = state.style;
+    triggerStyleMorph();
+  }
+}, 50);
+
+/* ══════════════════════════════════
+   INVERT TOGGLE
+══════════════════════════════════ */
+invertToggle.addEventListener('click', e => {
+  e.stopPropagation(); // don't trigger file picker
+  state.invert = !state.invert;
+  invertToggle.classList.toggle('on', state.invert);
+  playToggleClick();
+  scheduleRender();
+});
+
+function playToggleClick() {
+  try {
+    const ctx  = getAudioCtx();
+    /* Two short clicks — classic toggle snap */
+    [0, 0.04].forEach(offset => {
+      const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.018, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 8);
+      }
+      const src  = ctx.createBufferSource();
+      src.buffer = buf;
+      const gain = ctx.createGain();
+      gain.gain.value = 0.09;
+      const hp   = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 2400;
+      src.connect(hp);
+      hp.connect(gain);
+      gain.connect(ctx.destination);
+      src.start(ctx.currentTime + offset);
+    });
+  } catch(e) {}
+}
+
+/* ══════════════════════════════════
+   DOWNLOAD BUTTON — tactile press
+══════════════════════════════════ */
+btnAssembly.addEventListener('pointerdown', () => {
+  btnAssembly.classList.add('pressed');
+  playButtonPress();
+});
+
+window.addEventListener('pointerup', () => {
+  if (btnAssembly.classList.contains('pressed')) {
+    btnAssembly.classList.remove('pressed');
+    playButtonRelease();
+  }
+});
+
+btnAssembly.addEventListener('click', () => {
+  if (!state.hasImage) {
+    screen.style.transition = 'box-shadow 0.08s ease';
+    screen.style.boxShadow  = 'inset 0 0 10px 4px rgba(255,89,44,0.25)';
+    setTimeout(() => { screen.style.boxShadow = ''; screen.style.transition = ''; }, 450);
+    return;
+  }
+
+  flashIndicator();
+  exportPNG();
+});
+
+function exportPNG() {
+  const src = state.imageData;
+  const sw  = src.width, sh = src.height;
+
+  /* ── Compute exact same cols/rows as the current render ── */
+  const cols          = Math.round(DETAIL_MIN + state.detail * (DETAIL_MAX - DETAIL_MIN));
+  const charAspect    = 0.55;
+  const rows          = Math.round((sh / sw) * cols * charAspect);
+  const contrastFactor = 0.2 + state.contrast * 3.8;
+  const charSet       = currentCharSet;
+  const charLen       = charSet.length - 1;
+
+  /* ── Build ASCII lines ── */
+  const lines = [];
+  for (let r = 0; r < rows; r++) {
+    let line = '';
+    for (let c = 0; c < cols; c++) {
+      const px  = Math.floor(c / cols * sw);
+      const py  = Math.floor(r / rows * sh);
+      const idx = (py * sw + px) * 4;
+      const R   = src.data[idx], G = src.data[idx+1], B = src.data[idx+2];
+      let lum   = (0.299 * R + 0.587 * G + 0.114 * B) / 255;
+      lum = applyContrast(lum, contrastFactor);
+      if (state.invert) lum = 1 - lum;
+      const ci = Math.min(charLen, Math.floor(lum * (charLen + 1)));
+      line += charSet[ci];
+    }
+    lines.push(line);
+  }
+
+  /* ── High-quality canvas render ── */
+  const SCALE    = 3;               /* 3× for HiDPI / crisp output */
+  const FONT_PX  = 12;              /* base font size in export canvas */
+  const LINE_H   = FONT_PX * 1.2;
+  const CHAR_W   = FONT_PX * 0.601;
+  const PAD      = 32;
+
+  const cw = Math.ceil(cols * CHAR_W) + PAD * 2;
+  const ch = Math.ceil(rows * LINE_H) + PAD * 2;
+
+  const offC = document.createElement('canvas');
+  offC.width  = cw * SCALE;
+  offC.height = ch * SCALE;
+
+  const ctx = offC.getContext('2d');
+  ctx.scale(SCALE, SCALE);
+
+  /* Background */
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, cw, ch);
+
+  /* Scanlines (subtle) */
+  for (let y = 0; y < ch; y += 4) {
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillRect(0, y + 2, cw, 2);
+  }
+
+  /* ASCII text */
+  ctx.font         = `${FONT_PX}px "Courier New", monospace`;
+  ctx.textBaseline = 'top';
+  ctx.fillStyle    = '#d4d4d4';
+
+  for (let r = 0; r < lines.length; r++) {
+    ctx.fillText(lines[r], PAD, PAD + r * LINE_H);
+  }
+
+  /* Export */
+  offC.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href    = url;
+    a.download = 'ascii-art.png';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+}
+
+/* ══════════════════════════════════
+   BOOT
+══════════════════════════════════ */
+window.addEventListener('resize', () => {
+  resizeIdleCanvas();
+  buildIdleGrid();
+  if (state.hasImage) scheduleRender();
+});
+
+startIdle();
+</script>
+</body>
+</html>
