@@ -17,7 +17,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100dvh;
+      min-height: 100vh;
       padding: 12px;
       font-family: 'IBM Plex Sans Condensed', sans-serif;
     }
@@ -888,11 +888,14 @@ function setKnobValue(name, v) {
   lastTickVal[name] = v;
 });
 
+let dragPointerType = 'mouse';
+
 function onPointerDown(e) {
   const name = e.currentTarget.dataset.label;
-  activeKnob   = name;
-  dragStartY   = e.clientY;
-  dragStartVal = state[name];
+  activeKnob      = name;
+  dragStartY      = e.clientY;
+  dragStartVal    = state[name];
+  dragPointerType = e.pointerType; // 'mouse' | 'touch' | 'pen'
   e.currentTarget.classList.add('dragging');
   window.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup',   onPointerUp);
@@ -902,8 +905,10 @@ function onPointerDown(e) {
 
 function onPointerMove(e) {
   if (!activeKnob) return;
-  const dy    = dragStartY - e.clientY;
-  const delta = dy / 160;
+  const dy = dragStartY - e.clientY;
+  // Touch needs less drag distance — halve the divisor for touch/pen
+  const sensitivity = (dragPointerType === 'touch' || dragPointerType === 'pen') ? 70 : 160;
+  const delta  = dy / sensitivity;
   const newVal = Math.max(0, Math.min(1, dragStartVal + delta));
   setKnobValue(activeKnob, newVal);
   scheduleRender();
@@ -1191,7 +1196,7 @@ function exportPNG() {
   const FONT_PX  = 12;              /* base font size in export canvas */
   const LINE_H   = FONT_PX * 1.2;
   const CHAR_W   = FONT_PX * 0.601;
-  const PAD      = 24;
+  const PAD      = 32;
 
   const cw = Math.ceil(cols * CHAR_W) + PAD * 2;
   const ch = Math.ceil(rows * LINE_H) + PAD * 2;
